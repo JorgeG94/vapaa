@@ -15,7 +15,12 @@ project(
 set(project_name vapaa)
 enable_language(Fortran)
 enable_language(C)
+
+option(VAPAA_ENABLE_TESTING "Build tests" OFF)
+
+if(VAPAA_ENABLE_TESTING)
 enable_testing()
+endif()
 include(ExternalProject)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -25,6 +30,7 @@ set(CMAKE_Fortran_STANDARD 2018)
 set(CMAKE_Fortran_STANDARD_REQUIRED ON)
 
 find_package(MPI REQUIRED COMPONENTS C)
+
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 # Create the static library
@@ -45,7 +51,9 @@ else()
   elseif(MPI_Fortran_COMPILER MATCHES "cray")
     set(FLAG_MPI -DMPICH)
   else()
-    set(FLAG_MPI "UnknownMPI")
+    #set(FLAG_MPI "UnknownMPI")
+    set(FLAG_MPI -DOPEN_MPI)
+    set(WARNING "Automatic detection failed, assuming OpenMPI")
   endif()
   message(STATUS "Automatically detected MPI Vendor: ${FLAG_MPI}")
 endif()
@@ -63,4 +71,25 @@ set_target_properties(
              Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")
 
 add_subdirectory(source)
+if(VAPAA_ENABLE_TESTING)
 add_subdirectory(tests)
+endif()
+
+add_library(vapaa::vapaa ALIAS ${vapa_lib})
+
+install(TARGETS ${vapa_lib}
+  EXPORT vapaaTargets
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/modules"
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.mod")
+
+install(EXPORT vapaaTargets
+        FILE vapaaTargets.cmake
+        NAMESPACE vapaa::
+        DESTINATION lib/cmake/vapaa)
+
