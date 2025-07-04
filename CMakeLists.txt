@@ -13,6 +13,7 @@ project(
   VERSION 0.0.0
   LANGUAGES Fortran C)
 set(project_name vapaa)
+include(GNUInstallDirs)
 enable_language(Fortran)
 enable_language(C)
 
@@ -67,8 +68,15 @@ target_link_libraries(${vapa_lib} PRIVATE MPI::MPI_C)
 # Set the library output and module directories
 set_target_properties(
   ${vapa_lib}
-  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-             Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")
+  PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib"
+             Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/include")
+
+target_include_directories(${vapa_lib}
+  PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
+
 
 add_subdirectory(source)
 if(VAPAA_ENABLE_TESTING)
@@ -82,9 +90,9 @@ install(TARGETS ${vapa_lib}
   RUNTIME DESTINATION bin
 )
 
-install(DIRECTORY "${CMAKE_BINARY_DIR}/modules"
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.mod")
+install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        )
 
 install(EXPORT vapaaTargets
         FILE vapaaTargets.cmake
