@@ -35,7 +35,7 @@ find_package(MPI REQUIRED COMPONENTS C)
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 # Create the static library
-set(vapa_lib vapa)
+set(vapa_lib vapaa)
 
 add_library(${vapa_lib} STATIC)
 
