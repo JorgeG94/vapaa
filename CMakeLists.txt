@@ -75,8 +75,6 @@ if(VAPAA_ENABLE_TESTING)
 add_subdirectory(tests)
 endif()
 
-add_library(vapaa::vapaa ALIAS ${vapa_lib})
-
 install(TARGETS ${vapa_lib}
   EXPORT vapaaTargets
   ARCHIVE DESTINATION lib
