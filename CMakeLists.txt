@@ -70,4 +70,21 @@ if(VAPAA_ENABLE_TESTING)
 add_subdirectory(tests)
 endif()
 
+add_library(vapaa::vapaa ALIAS ${vapa_lib})
+
+install(TARGETS ${vapa_lib}
+  EXPORT vapaaTargets
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY "${CMAKE_BINARY_DIR}/modules"
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.mod")
+
+install(EXPORT vapaaTargets
+        FILE vapaaTargets.cmake
+        NAMESPACE vapaa::
+        DESTINATION lib/cmake/vapaa)
 
