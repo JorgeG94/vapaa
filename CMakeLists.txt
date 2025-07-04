@@ -15,7 +15,9 @@ project(
 set(project_name vapaa)
 enable_language(Fortran)
 enable_language(C)
+if(VAPAA_ENABLE_TESTING)
 enable_testing()
+endif()
 include(ExternalProject)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -25,6 +27,7 @@ set(CMAKE_Fortran_STANDARD 2018)
 set(CMAKE_Fortran_STANDARD_REQUIRED ON)
 
 find_package(MPI REQUIRED COMPONENTS C)
+
 set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 # Create the static library
@@ -63,4 +66,8 @@ set_target_properties(
              Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/modules")
 
 add_subdirectory(source)
+if(VAPAA_ENABLE_TESTING)
 add_subdirectory(tests)
+endif()
+
+
