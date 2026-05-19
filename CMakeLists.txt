@@ -15,7 +15,7 @@ project(
 set(project_name vapaa)
 include(GNUInstallDirs)
 
-option(VAPAA_ENABLE_TESTING "Build tests" OFF)
+option(VAPAA_ENABLE_TESTING "Build tests" ON)
 
 if(VAPAA_ENABLE_TESTING)
 enable_testing()
@@ -89,7 +89,7 @@ else()
   message(STATUS "Auto-detected MPI vendor from mpi.h: ${FLAG_MPI}")
 endif()
 
-target_compile_options(${vapaa_lib} PRIVATE -Wall -Wextra -fPIE)
+target_compile_options(${vapaa_lib} PRIVATE -Wall -Wextra )
 target_compile_definitions(${vapaa_lib} PRIVATE HAVE_CFI ${FLAG_MPI})
 target_link_libraries(${vapaa_lib} PRIVATE MPI::MPI_C)
 

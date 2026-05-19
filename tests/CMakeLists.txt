@@ -5,8 +5,8 @@ file(GLOB TEST_SOURCES "*.F90")
 set(MPI_NUM_PROCESSES 4)
 
 # These tests exercise non-contiguous CFI datatypes (MPIX_Iov) or rely on
-# MPICH-specific datatype-handle semantics. Skip them when not building
-# against MPICH so CTest reports them as disabled rather than failed.
+# MPICH-specific datatype-handle semantics. Exclude them from the build
+# entirely when not targeting MPICH.
 set(VAPAA_MPICH_ONLY_TESTS
   mpich_uallreducef08
   test_matrix_noncontig_2
@@ -18,8 +18,12 @@ if(NOT FLAG_MPI STREQUAL "MPICH")
   string(REPLACE ";" ", " _vapaa_skipped_tests "${VAPAA_MPICH_ONLY_TESTS}")
   message(WARNING
     "MPI vendor is not MPICH (FLAG_MPI=${FLAG_MPI}); the following tests "
-    "require MPICH MPIX_Iov support and will be marked DISABLED: "
+    "require MPICH MPIX_Iov support and will be EXCLUDED from the build: "
     "${_vapaa_skipped_tests}")
+
+  foreach(_vapaa_skipped_test ${VAPAA_MPICH_ONLY_TESTS})
+    list(FILTER TEST_SOURCES EXCLUDE REGEX "/${_vapaa_skipped_test}\\.F90$")
+  endforeach()
 endif()
 
 # Iterate over the test files and create executables
@@ -31,7 +35,7 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
   add_executable(${TEST_NAME} ${TEST_SOURCE})
 
   # Link the library to the test
-  target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -g -std=f2018 -fPIE)
+  target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -g --implicit-interface) 
   target_compile_definitions(${TEST_NAME} PRIVATE HAVE_CFI)
   target_link_libraries(${TEST_NAME} PRIVATE ${vapaa_lib})
   # this is because on mac it compiles so fast it can trigger race conditions, wait for 
@@ -51,10 +55,5 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     PASS_REGULAR_EXPRESSION "Test passed" # Adjust this to match expected output
   )
-
-  if(NOT FLAG_MPI STREQUAL "MPICH" AND TEST_NAME IN_LIST VAPAA_MPICH_ONLY_TESTS)
-    set_tests_properties(${TEST_NAME} PROPERTIES
-      DISABLED TRUE)
-  endif()
 endforeach()
 
