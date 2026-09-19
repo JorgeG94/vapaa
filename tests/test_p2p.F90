@@ -9,8 +9,11 @@ program main
     type(MPI_Request) :: r
     type(MPI_Request), allocatable :: vr(:)
     logical :: flag
+    integer :: nerrors
 
     call MPI_Init(ierror)
+
+    nerrors = 0
 
     call MPI_Comm_rank(MPI_COMM_WORLD,me)
     call MPI_Comm_size(MPI_COMM_WORLD,np)
@@ -39,17 +42,15 @@ program main
             call MPI_Send(x,b,MPI_INTEGER,me+1,i,MPI_COMM_WORLD)
         else
             x = -1
-#if 1
-            call MPI_Recv(x,b,MPI_INTEGER,me-1,i,MPI_COMM_WORLD,MPI_STATUS_IGNORE)
-            s = s
-#else
             call MPI_Recv(x,b,MPI_INTEGER,me-1,i,MPI_COMM_WORLD,s)
             if (((s % MPI_SOURCE) .ne. me-1).or.((s % MPI_TAG).ne.i)) then
-                print*,'MPI_Status is wrong'
-                print*,'status = ',s % MPI_SOURCE,s % MPI_TAG,s % MPI_ERROR
+                nerrors = nerrors + 1
+                print*,'MPI_Status is wrong after MPI_Recv'
+                print*,'expected source,tag = ',me-1,i
+                print*,'actual   source,tag = ',s % MPI_SOURCE,s % MPI_TAG
             endif
-#endif
             if (any(x.ne.(me-1))) then
+                nerrors = nerrors + 1
                 print*,'an error has occurred'
                 print*,x
             endif
@@ -76,11 +77,14 @@ program main
 #else
             call MPI_Wait(r,s)
             if (((s % MPI_SOURCE) .ne. me-1).or.((s % MPI_TAG).ne.i)) then
-                print*,'MPI_Status is wrong'
-                print*,'status = ',s % MPI_SOURCE,s % MPI_TAG,s % MPI_ERROR
+                nerrors = nerrors + 1
+                print*,'MPI_Status is wrong after MPI_Wait'
+                print*,'expected source,tag = ',me-1,i
+                print*,'actual   source,tag = ',s % MPI_SOURCE,s % MPI_TAG
             endif
 #endif
             if (any(x.ne.(me-1))) then
+                nerrors = nerrors + 1
                 print*,'an error has occurred'
                 print*,x
             endif
@@ -100,6 +104,7 @@ program main
     call MPI_Waitall(2*np,vr,MPI_STATUSES_IGNORE)
     do i=0,np-1
       if(x(np+i+1).ne.(i)) then
+        nerrors = nerrors + 1
         print*,'an error has occurred'
         print*,x(np+i)
       endif
@@ -125,6 +130,14 @@ program main
       endif
     enddo
     deallocate( vr , x )
+
+    ! Any rank that saw a mismatch must fail the whole run -- printing and
+    ! exiting 0 is how a real ABI bug sat here unnoticed.
+    call MPI_Allreduce(MPI_IN_PLACE,nerrors,1,MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD)
+    if (nerrors.ne.0) then
+        if(me.eq.0) print*,'Test FAILED with ',nerrors,' error(s)'
+        call MPI_Abort(MPI_COMM_WORLD,1)
+    endif
 
     if(me.eq.0) print*,'EVERYTHING IS OKAY'
     if(me.eq.0) print *, 'Test passed'

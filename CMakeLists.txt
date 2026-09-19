@@ -89,7 +89,18 @@ else()
   message(STATUS "Auto-detected MPI vendor from mpi.h: ${FLAG_MPI}")
 endif()
 
-target_compile_options(${vapaa_lib} PRIVATE -Wall -Wextra -fPIE)
+target_compile_options(${vapaa_lib} PRIVATE -Wall -Wextra)
+
+# Position independence via the CMake property rather than a hardcoded -fPIE.
+#
+# -fPIE emits relocations that are only valid in an executable, so a consumer
+# linking this static archive into a shared library fails at link time with
+#   relocation R_X86_64_PC32 against ... can not be used when making a shared
+#   object; recompile with -fPIC
+# The property gives CMake the choice -- -fPIC for a library -- and a
+# -fPIE in target_compile_options would override it anyway, since the last of
+# -fPIC/-fPIE on the command line wins.
+set_property(TARGET ${vapaa_lib} PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(${vapaa_lib} PRIVATE HAVE_CFI ${FLAG_MPI})
 target_link_libraries(${vapaa_lib} PRIVATE MPI::MPI_C)
 
